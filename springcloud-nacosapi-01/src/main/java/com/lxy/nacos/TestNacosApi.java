@@ -5,6 +5,7 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
+import java.util.List;
 import java.util.Properties;
 
 public class TestNacosApi {
@@ -15,7 +16,23 @@ public class TestNacosApi {
 
     public static void main(String[] args) throws Exception {
 
-        // 创建NamingService实例,其实就是nacos的服务端信息
+        String userServiceName = "user-service";
+
+       // 注册服务
+        serverRegister(userServiceName);
+
+        // 发现服务
+        List<Instance> instances = serverDiscover(userServiceName);
+        for (Instance instance : instances) {
+            System.out.println(instance.toString());
+        }
+
+
+        System.in.read();
+    }
+
+    // 注册服务
+    private static void serverRegister(String instanceName) throws NacosException {
         Properties properties = new Properties();
         properties.put("serverAddr", SERVICE_ADDR);
         properties.put("groupName", GROUP_NAME);
@@ -26,8 +43,19 @@ public class TestNacosApi {
         userInstance.setIp("127.0.0.1");
         userInstance.setPort(8080);
 
-        namingService.registerInstance("user-service",userInstance);
-
-        System.in.read();
+        namingService.registerInstance(instanceName,userInstance);
     }
+
+    // 发现服务
+    private static List<Instance> serverDiscover(String instanceName) throws NacosException {
+        Properties properties = new Properties();
+        properties.put("serverAddr", SERVICE_ADDR);
+        properties.put("groupName", GROUP_NAME);
+        NamingService namingService = NamingFactory.createNamingService(properties);
+
+        // 发现实例服务所有的实例，因为可能是分布式集群，所以返回的是一个列表
+        return namingService.getAllInstances(instanceName);
+    }
+
+
 }
